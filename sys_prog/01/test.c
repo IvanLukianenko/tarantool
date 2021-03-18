@@ -110,6 +110,17 @@ allocate_stack_sig()
 	sigaltstack(&ss, NULL);
 	return stack;
 }
+int flags[6] = {0,0,0,0,0,0};
+int findGreaterWorkingCorutine(size, id){
+    int id_;
+    id_ = id % size;
+    for(int i = 0; i < 2 * size; i++){
+        if ((flags[i%size] == 0) && (i%size!=id) && ((i%size > id_) || (i>=size))){
+            return i%size;
+        }
+    }
+    return -1;
+}
 
 static void *
 allocate_stack_mmap()
@@ -182,7 +193,7 @@ main(int argc, char *argv[])
 	 * Here you specify a stack, allocated earlier. Unique for
 	 * each coroutine.
 	 */
-	uctxs[0].uc_stack.ss_sp = allocate_stack(STACK_MPROT);
+	uctxs[0].uc_stack.ss_sp = func1_stack;
 	uctxs[0].uc_stack.ss_size = stack_size;
     uctxs[0].uc_flags = 0;
 	/*
@@ -196,7 +207,7 @@ main(int argc, char *argv[])
 
 	if (getcontext(&uctxs[1]) == -1)
 		handle_error("getcontext");
-	uctxs[1].uc_stack.ss_sp = allocate_stack(STACK_MPROT);
+	uctxs[1].uc_stack.ss_sp = func2_stack;
 	uctxs[1].uc_stack.ss_size = stack_size;
 	/* Successor context is f1(), unless argc > 1. */
 	uctxs[1].uc_link =  &uctxs[0];
@@ -218,7 +229,7 @@ main(int argc, char *argv[])
         printf("%d ", array2[q]);
     }
 
-
+	printf("\n%d", findGreaterWorkingCorutine(6, 5));
 	printf("\nmain: exiting\n");
 	return 0;
 }

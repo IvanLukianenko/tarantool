@@ -6,13 +6,12 @@
 #define SIZE 102400
 #define RESULT "result.txt"
 #define MAX_LEVELS 1280
-#define stack_size 1024*1024*1024
+#define stack_size 1024*1024
 
-
-static ucontext_t *uctxs, uctx_main;
+static ucontext_t *uctxs = NULL, uctx_main;
 static ucontext_t uctx_start;
-int *flags;
-double *times;
+int *flags = NULL;
+double *times = NULL;
 static void *
 allocate_stack_mprot()
 {
@@ -69,7 +68,7 @@ static void quickSort(int *arr, int elements, int id, int size) {
     flags[id] = 1;
     
 }
-int findGreaterWorkingCorutine(size, id){
+int findGreaterWorkingCorutine(int size, int id){
     int id_;
     id_ = id % size;
     for(int i = 0; i < 2 * size; i++){
@@ -108,7 +107,7 @@ int checkFlagsForEnd(int size){
     }
     return 1;
 }
-void start_end(int size){
+static void start_end(int size){
     while(1){
         if (findWorkingCorutine(size, -1) == -1){
             swapcontext(&uctx_start, &uctx_main);
@@ -122,8 +121,8 @@ void start_end(int size){
 }
 void finalMerging(int **a, int size, char *filename, int size_of_last_one, int *sizes){   //передаем массив указалелей на массивы отсортированные и размер данного массива 
     
-    int *pivots = malloc(size*sizeof(pivots));
-    int *tmp = (int*)malloc(size * sizeof(tmp));                                          //указатели на текущие элементы массивов
+    int *pivots = (int *)malloc(size*sizeof(int));
+    int *tmp = (int*)malloc(size * sizeof(int));                                          //указатели на текущие элементы массивов
     for(int k = 0; k < size; k++){
         pivots[k] = 0;
     }
@@ -156,20 +155,22 @@ void finalMerging(int **a, int size, char *filename, int size_of_last_one, int *
 int main(int argc, char **argv) 
 {
     clock_t begin = clock();
-    flags = (unsigned int *)malloc(sizeof(flags)*(argc-1));
+    flags = (unsigned int *)malloc(sizeof(unsigned int)*(argc-1));
     times = (double *)malloc(sizeof(double)*(argc-1));
     for (int i = 0; i < argc-1; i++){
         flags[i] = 0;
     }
-    int *sizes = (int*)malloc(sizeof(int) * (argc-1));
-    FILE *fp;
+    int *sizes = NULL;
+    sizes = (int*)malloc(sizeof(int) * (argc-1));
+    FILE *fp = NULL;
     int a[SIZE];
     int i = 0;
     int size = 0;
 
-    int  **ps = (int **) malloc((argc-1) * sizeof(ps));
+    int  **ps = NULL;
+    ps = (int **) malloc((argc-1) * sizeof(ps));
 
-    uctxs = malloc((argc-1) * sizeof(uctxs));
+    uctxs = (ucontext_t *)malloc((argc) * sizeof(ucontext_t));
     
     //читаем файлы в память
     for (int j = 0; j < argc-1; j++){
@@ -214,6 +215,7 @@ int main(int argc, char **argv)
     for (int k = 0; k < argc-1; k++){
         size_of_last_one = size_of_last_one + sizes[k];
     }
+    free(uctxs);
     //финальное слияние в один массив
     finalMerging(ps, argc-1, RESULT, size_of_last_one, sizes);
     clock_t end = clock();
@@ -222,11 +224,11 @@ int main(int argc, char **argv)
     for(int i = 0; i < argc - 1; i++){
         printf("Coroutine %d worked %f ms\n", i, times[i]);
     }
+    fflush(stdout);
     free(sizes);
-    free(uctxs);
+    
     free(flags);
     free(ps);
     free(times);
-    _Exit(EXIT_SUCCESS);
     return 0;
 }
