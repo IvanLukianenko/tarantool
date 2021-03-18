@@ -3,26 +3,27 @@
 #include <ucontext.h>
 #include <sys/mman.h>
 #include <time.h>
-#define SIZE 102400
-#define RESULT "result.txt"
-#define MAX_LEVELS 1280
-#define stack_size 1024*1024
+#define SIZE 1000000                                                     
+#define RESULT "result.txt"                                             
+#define MAX_SIZE 128
+#define stack_size 1024*1024                                            
 
-static ucontext_t *uctxs = NULL, uctx_main;
+
+static ucontext_t *uctxs = NULL, uctx_main;             
 static ucontext_t uctx_start;
 int *flags = NULL;
 double *times = NULL;
 static void *
-allocate_stack_mprot()
+allocate_stack_mprot()                                                      // создание стека для корутин
 {
 	void *stack = malloc(stack_size);
 	mprotect(stack, stack_size, PROT_READ | PROT_WRITE | PROT_EXEC);
 	return stack;
 }
 
-static void quickSort(int *arr, int elements, int id, int size) {
+static void quickSort(int *arr, int elements, int id, int size) {           // алгоритм быстрой сортировки 
     clock_t begin = clock();
-    int beg[MAX_LEVELS], end[MAX_LEVELS], L, R;
+    int beg[MAX_SIZE], end[MAX_SIZE], L, R;
     int i = 0;
 
     beg[0] = 0;
@@ -56,7 +57,7 @@ static void quickSort(int *arr, int elements, int id, int size) {
             i--;
         }
         
-        if (findWorkingCorutine(size, id)!=-1){
+        if (findWorkingCorutine(size, id)!=-1){                             // переключание контекста
             if(swapcontext(&uctxs[id], &uctxs[findGreaterWorkingCorutine(size, id)]) == -1) {
                 printf("some problems");
             }
@@ -68,7 +69,7 @@ static void quickSort(int *arr, int elements, int id, int size) {
     flags[id] = 1;
     
 }
-int findGreaterWorkingCorutine(int size, int id){
+int findGreaterWorkingCorutine(int size, int id){                           // поиск следующей рабочей корутины 
     int id_;
     id_ = id % size;
     for(int i = 0; i < 2 * size; i++){
@@ -79,7 +80,7 @@ int findGreaterWorkingCorutine(int size, int id){
     return -1;
 }
 
-int indexOfMin(int **array, int *pivots, int size, int *tmp) {
+int indexOfMin(int **array, int *pivots, int size, int *tmp) {              // поиск индекса минимального 
     int min = 2147483647;
     int index = -1;
     for (int k = 0; k < size; k++){
@@ -90,7 +91,7 @@ int indexOfMin(int **array, int *pivots, int size, int *tmp) {
     }
     return index;
 };
-int findWorkingCorutine(int size, int id){
+int findWorkingCorutine(int size, int id){                                  // поиск просто работающий корутины, либо -1 (если нет работающих корутин)
     for(int i = 0; i < size; i++){
         if ((flags[i] == 0) && (i!=id)){
             return i;
@@ -99,15 +100,8 @@ int findWorkingCorutine(int size, int id){
     return -1;
     
 }
-int checkFlagsForEnd(int size){
-    for (int l; l<size; l++){
-        if (flags[l]==0){
-            return 0;
-        }
-    }
-    return 1;
-}
-static void start_end(int size){
+
+static void startEnd(int size){                                            // функция для корутины, которая будет обрабатывать все сортирующие корутины
     while(1){
         if (findWorkingCorutine(size, -1) == -1){
             swapcontext(&uctx_start, &uctx_main);
@@ -119,10 +113,10 @@ static void start_end(int size){
     }
 
 }
-void finalMerging(int **a, int size, char *filename, int size_of_last_one, int *sizes){   //передаем массив указалелей на массивы отсортированные и размер данного массива 
+void finalMerging(int **a, int size, char *filename, int size_of_last_one, int *sizes){   // финальное слияние
     
-    int *pivots = (int *)malloc(size*sizeof(int));
-    int *tmp = (int*)malloc(size * sizeof(int));                                          //указатели на текущие элементы массивов
+    int *pivots = (int *)malloc(size*sizeof(int));                                        
+    int *tmp = (int*)malloc(size * sizeof(int));                                          
     for(int k = 0; k < size; k++){
         pivots[k] = 0;
     }
@@ -141,10 +135,10 @@ void finalMerging(int **a, int size, char *filename, int size_of_last_one, int *
             
         if (pivots[actual_min] == sizes[actual_min]){
             n++;
-            tmp[actual_min] = -1;
-        }
-        else{
-            tmp[actual_min] = a[actual_min][pivots[actual_min]];
+            tmp[actual_min] = -1;                                                           // небольшая эвристика, ставлю -1, как знак того,
+        }                                                                                   // что не нужно дальше рассматривать данный массив (он закончился)
+        else{                                                                               // *в предположении, что все элементы файлов неотрицательные
+            tmp[actual_min] = a[actual_min][pivots[actual_min]];                            // могу переписать по-другому, для обобщения на отрицательные элементы
         }
     }
     fclose(finalfp);
@@ -172,8 +166,8 @@ int main(int argc, char **argv)
 
     uctxs = (ucontext_t *)malloc((argc) * sizeof(ucontext_t));
     
-    //читаем файлы в память
-    for (int j = 0; j < argc-1; j++){
+    
+    for (int j = 0; j < argc-1; j++){                                                       //читаем файлы в память
         size = 0;
         i = 0;
         if ((fp = fopen(argv[j+1], "r")) < 0){
@@ -194,14 +188,14 @@ int main(int argc, char **argv)
     fclose(fp);
 
     
-    getcontext(&uctx_start);
+    getcontext(&uctx_start);                                                        // обрабатываем корутину-обработчика
     uctx_start.uc_stack.ss_sp = allocate_stack_mprot();
     uctx_start.uc_stack.ss_size = stack_size;
     uctx_start.uc_link = &uctx_main;
-    makecontext(&uctx_start, start_end, 1, (argc-1));
+    makecontext(&uctx_start, startEnd, 1, (argc-1));
 
 
-    for(int j = 0; j < argc-1; j++){
+    for(int j = 0; j < argc-1; j++){                                                // обрабатывем сортирующие корутины
         if(getcontext(&uctxs[j]) == -1){
             printf("some problems");
         }
@@ -210,23 +204,23 @@ int main(int argc, char **argv)
         uctxs[j].uc_link = &uctx_start;
         makecontext(&uctxs[j], quickSort, 4, ps[j], sizes[j], j, argc-1);
     }
+
     swapcontext(&uctx_main, &uctx_start);
+    
     int size_of_last_one = 0;
     for (int k = 0; k < argc-1; k++){
         size_of_last_one = size_of_last_one + sizes[k];
     }
-    free(uctxs);
-    //финальное слияние в один массив
-    finalMerging(ps, argc-1, RESULT, size_of_last_one, sizes);
+    
+    finalMerging(ps, argc-1, RESULT, size_of_last_one, sizes);                         //финальное слияние в один массив
     clock_t end = clock();
     double time_spent = (double)(end - begin)/(CLOCKS_PER_SEC/1000);
     printf("All over in %f ms\n", time_spent);
     for(int i = 0; i < argc - 1; i++){
         printf("Coroutine %d worked %f ms\n", i, times[i]);
     }
-    fflush(stdout);
+    free(uctxs);
     free(sizes);
-    
     free(flags);
     free(ps);
     free(times);

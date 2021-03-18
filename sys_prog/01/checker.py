@@ -15,16 +15,15 @@ data = f.read()
 f.close()
 
 data = data.split()
-previous_number = - (maxint-1)
-print(previous_number)
+prev_number = -(1 << 31 - 1)
 for i in range(0, len(data)):
 	try:
 		v = int(data[i])
-		if v < previous_number:
-			print('Error on numbers {} {}'.format(previous_number, v))
-			break
-		prev_numbers = v
+		if v < prev_number:
+			print('Error on numbers {} {}'.format(prev_number, v))
+			exit(1)
+		prev_number = v
 	except:
 		pass
-
+print(len(data))
 print('All is ok')
