@@ -2,8 +2,7 @@
 #include <stdlib.h>
 #include <ucontext.h>
 #include <sys/mman.h>
-#include <time.h>
-#define SIZE 1000000                                                     
+#include <time.h>                                                
 #define RESULT "result.txt"                                             
 #define MAX_SIZE 128
 #define stack_size 1024*1024                                            
@@ -116,7 +115,7 @@ static void startEnd(int size){                                            // ф
 void finalMerging(int **a, int size, char *filename, int size_of_last_one, int *sizes){   // финальное слияние
     
     int *pivots = (int *)malloc(size*sizeof(int));                                        
-    int *tmp = (int*)malloc(size * sizeof(int));                                          
+    int *tmp = (int*)malloc(size * sizeof(int));                                       
     for(int k = 0; k < size; k++){
         pivots[k] = 0;
     }
@@ -151,36 +150,40 @@ int main(int argc, char **argv)
     clock_t begin = clock();
     flags = (unsigned int *)malloc(sizeof(unsigned int)*(argc-1));
     times = (double *)malloc(sizeof(double)*(argc-1));
+    char **stacks = (char **)malloc((argc-1)*sizeof(char));   
+
     for (int i = 0; i < argc-1; i++){
         flags[i] = 0;
     }
+
     int *sizes = NULL;
     sizes = (int*)malloc(sizeof(int) * (argc-1));
     FILE *fp = NULL;
-    int a[SIZE];
     int i = 0;
     int size = 0;
-
-    int  **ps = NULL;
+    int num;
+    int  **ps;
     ps = (int **) malloc((argc-1) * sizeof(ps));
+    
+    for(int i = 0; i < argc - 1; i++){
+        ps[i] = NULL;
+    }
 
     uctxs = (ucontext_t *)malloc((argc) * sizeof(ucontext_t));
     
     
     for (int j = 0; j < argc-1; j++){                                                       //читаем файлы в память
         size = 0;
-        i = 0;
         if ((fp = fopen(argv[j+1], "r")) < 0){
             printf("some problems\n");
             return -1;
         }; 
-        while(fscanf(fp, " %d ", &a[i]) > 0){
-            size++;
-            i++;
-        }
-        ps[j] = (int *)malloc((size) * sizeof(int));
-        for (int q = 0; q<size; q++){
-            ps[j][q] = a[q];
+        while (fscanf(fp, "%d", &num) == 1 ){
+            if ((ps[j] = (int*)realloc(ps[j], sizeof(int) * (size + 1)) ) == NULL){
+                perror("realloc");
+                exit(EXIT_FAILURE);
+            }
+            ps[j][size++] = num;
         }
         sizes[j] = size;
         
@@ -219,6 +222,12 @@ int main(int argc, char **argv)
     for(int i = 0; i < argc - 1; i++){
         printf("Coroutine %d worked %f ms\n", i, times[i]);
     }
+    for(int i = 0; i < argc - 1; i++){
+        free(uctxs[i].uc_stack.ss_sp);
+        free(ps[i]);
+    }
+
+    free(stacks);
     free(uctxs);
     free(sizes);
     free(flags);
