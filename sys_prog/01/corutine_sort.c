@@ -5,7 +5,7 @@
 #include <time.h>                                                
 #define RESULT "result.txt"                                             
 #define MAX_SIZE 128
-#define stack_size 32*1024                                            
+#define stack_size 64*1024                                            
 
 
 static ucontext_t *uctxs = NULL, uctx_main;             
