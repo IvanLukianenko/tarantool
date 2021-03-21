@@ -5,13 +5,14 @@
 #include <time.h>                                                
 #define RESULT "result.txt"                                             
 #define MAX_SIZE 128
-#define stack_size 1024*1024                                            
+#define stack_size 32*1024                                            
 
 
 static ucontext_t *uctxs = NULL, uctx_main;             
 static ucontext_t uctx_start;
 int *flags = NULL;
 double *times = NULL;
+
 static void *
 allocate_stack_mprot()                                                      // создание стека для корутин
 {
@@ -68,6 +69,7 @@ static void quickSort(int *arr, int elements, int id, int size) {           // �
     flags[id] = 1;
     
 }
+
 int findGreaterWorkingCorutine(int size, int id){                           // поиск следующей рабочей корутины 
     int id_;
     id_ = id % size;
@@ -89,7 +91,8 @@ int indexOfMin(int **array, int *pivots, int size, int *tmp) {              // �
         }
     }
     return index;
-};
+}
+
 int findWorkingCorutine(int size, int id){                                  // поиск просто работающий корутины, либо -1 (если нет работающих корутин)
     for(int i = 0; i < size; i++){
         if ((flags[i] == 0) && (i!=id)){
@@ -112,6 +115,7 @@ static void startEnd(int size){                                            // ф
     }
 
 }
+
 void finalMerging(int **a, int size, char *filename, int size_of_last_one, int *sizes){   // финальное слияние
     
     int *pivots = (int *)malloc(size*sizeof(int));                                        
@@ -164,7 +168,7 @@ int main(int argc, char **argv)
     int num;
     int  **ps;
     ps = (int **) malloc((argc-1) * sizeof(ps));
-    
+
     for(int i = 0; i < argc - 1; i++){
         ps[i] = NULL;
     }
