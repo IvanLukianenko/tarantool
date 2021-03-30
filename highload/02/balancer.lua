@@ -22,7 +22,11 @@ for _, host in ipairs(hosts) do
 end
 
 function remove_connection(conn_num)
-    table.remove(connections, conn_num)
+    if conn_num >= #connections or conn_num <= 0 then
+        print("No such connection")
+    else
+        table.remove(connections, conn_num)
+    ends
 end
 
 local req_num = 1
