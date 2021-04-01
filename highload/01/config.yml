@@ -1,6 +1,6 @@
 ---
 proxy:
-  port: 80
+  url: mail.ru
   bypass:
     host: localhost
     port: 8080
