@@ -1,5 +1,6 @@
+# Servers balancer
 Поднять сервер server.lua с помощью команды:
-tarantool -i server.lua <port>
+tarantool -i server.lua port_num
 
 Поднять балансировщик balancer.lua в интерактивном режиме с помощью команды:
 tarantool -i balancer.lua
