@@ -3,7 +3,7 @@
 
 struct cmd{
     const char *name;
-    const char **argv;
+    char **argv;
     int argc;
 };
 
@@ -40,11 +40,9 @@ struct cmd parser(char *command){
         if (cmd.argv[k][0] == '"'){
             for (j = k+1; j < cmd.argc; j++){
                 
-                if(cmd.argv[j][strlen(cmd.argv[j]) - 1] == '"') {
+                if(cmd.argv[j][strlen(cmd.argv[j]) - 1] == '"' && cmd.argv[j][strlen(cmd.argv[j])-2] != '\\') {
                     cmd.argv[k] = concat(cmd.argv[k], " ");
                     cmd.argv[k] = concat(cmd.argv[k], cmd.argv[j]);
-                    //<сдвинуть все строки на j-k, начиная с k, уменьшить argc на j-k>
-                    //<доработать>
                     for(int n = k + 1; n < cmd.argc - j + k; n++){
                         strcpy(cmd.argv[n], cmd.argv[n+j-k]);
                     }
@@ -56,7 +54,35 @@ struct cmd parser(char *command){
                     cmd.argv[k] = concat(cmd.argv[k], cmd.argv[j]);
                 }
             }
+            for (int y = 0; y < strlen(cmd.argv[k])-1; y++){
+                cmd.argv[k][y] = cmd.argv[k][y+1];
+            }
+            cmd.argv[k][strlen(cmd.argv[k])-2] = '\0';
         }
+
+        else if (cmd.argv[k][0] == '\''){
+            for (j = k+1; j < cmd.argc; j++){
+                
+                if(cmd.argv[j][strlen(cmd.argv[j]) - 1] == '\'' && cmd.argv[j][strlen(cmd.argv[j])-2] != '\\') {
+                    cmd.argv[k] = concat(cmd.argv[k], " ");
+                    cmd.argv[k] = concat(cmd.argv[k], cmd.argv[j]);
+                    for(int n = k + 1; n < cmd.argc - j + k; n++){
+                        strcpy(cmd.argv[n], cmd.argv[n+j-k]);
+                    }
+                    cmd.argc = cmd.argc - j + k ;
+                    break;
+                }
+                else{
+                    cmd.argv[k] = concat(cmd.argv[k], " ");
+                    cmd.argv[k] = concat(cmd.argv[k], cmd.argv[j]);
+                }
+            }
+            for (int y = 0; y < strlen(cmd.argv[k])-1; y++){
+                cmd.argv[k][y] = cmd.argv[k][y+1];
+            }
+            cmd.argv[k][strlen(cmd.argv[k])-2] = '\0';
+        }
+        
     }
     cmd.argv[cmd.argc] = NULL;
     return cmd;
