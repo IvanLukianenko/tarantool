@@ -23,11 +23,23 @@ int main(){
     while(1){
         printf("\nLukianenko@tarantoolShell> ");
         char *str = get_string(&k);
+
         if (strcmp(str, "exit") == 0){
             printf("exitting ...\n");
             return 0;
         }
         cmds = parserr(str);
+        //print_args(cmds[0]);
+        //break;
+        if (strcmp(cmds[0].name, "cd") == 0){
+            if (cmds[0].argv[1] == NULL) {
+                fprintf(stderr, "> ожидается аргумент для \"cd\"\n");
+            } else {
+                if (chdir(cmds[0].argv[1]) != 0) {
+                    perror("lsh");
+                }
+        }
+        }
         for(int i = 0; i < k + 1; i++){
 
             oRedirectFlag = 0;
@@ -105,8 +117,10 @@ int main(){
                 }
                 pipe1[0] = pipe2[0];
                 pipe1[1] = pipe2[1];
-                wait(NULL);  
-                free(oFileName); 
+                wait(NULL);
+                if(oRedirectFlag > 0){
+                    free(oFileName);
+                }  
                 //break;
             }     
             
