@@ -7,33 +7,26 @@
 #include "sys/wait.h"
 #include <fcntl.h>
 
-
-
 int main(){
-    /*main variables*/
     struct cmd *cmds; 
     int k;
     int pipe1[2], pipe2[2];
     int oRedirectFlag;
     char *oFileName;
-    /*additional variables*/
-    char buf[1024];
-
-    
+    char *str;
     while(1){
         printf("\nLukianenko@tarantoolShell> ");
-        char *str = get_string(&k);
+        str = get_string(&k);
 
         if (strcmp(str, "exit") == 0){
             printf("exitting ...\n");
+            free(str);
             return 0;
         }
         cmds = parserr(str);
-        //print_args(cmds[0]);
-        //break;
         if (strcmp(cmds[0].name, "cd") == 0){
             if (cmds[0].argv[1] == NULL) {
-                fprintf(stderr, "> ожидается аргумент для \"cd\"\n");
+                fprintf(stderr, "Lukianenko@tarantoolShell> ожидается аргумент для \"cd\"\n");
             } else {
                 if (chdir(cmds[0].argv[1]) != 0) {
                     perror("lsh");
@@ -62,20 +55,19 @@ int main(){
                 pipe(pipe2);
             }
             if(fork() == 0){ 
-                /*<Определить что делать с перенаправлением в файл>*/
                 if(oRedirectFlag == 2 && i == k){
                     int ofd = open(oFileName, O_WRONLY | O_APPEND);
                     if(ofd < 0){
-                        /*обработать*/
+                        perror("File did not open");
                     }
                     close(STDOUT_FILENO);
                     dup(ofd);
                     close(ofd);
                 }
                 if(oRedirectFlag == 1 && i == k){
-                    int ofd = open(oFileName, O_WRONLY | O_CREAT, 00700);
+                    int ofd = open(oFileName, O_TRUNC | O_CREAT | O_WRONLY, 00700);
                     if(ofd < 0){
-                        /*обработать*/
+                        perror("File did not open");
                     }
                     close(STDOUT_FILENO);
                     dup(ofd);
@@ -83,13 +75,13 @@ int main(){
                 }
 
                 if (k > 0){
-                    if (i == 0){// самый первый процесс
+                    if (i == 0){                    
                         close(STDOUT_FILENO);
                         dup(pipe2[STDOUT_FILENO]);
                         close(pipe2[STDOUT_FILENO]);
                         close(pipe2[STDIN_FILENO]);
                     }
-                    else if(i < k){ // промежуточный процесс
+                    else if(i < k){                 
                         close(STDIN_FILENO);
                         dup(pipe1[STDIN_FILENO]);
                         close(pipe1[STDIN_FILENO]);
@@ -99,7 +91,7 @@ int main(){
                         close(pipe2[STDOUT_FILENO]);
                         close(pipe2[STDIN_FILENO]);
                     }
-                    else{       // финальный процесс
+                    else{                           
                         close(STDIN_FILENO);
                         dup(pipe1[STDIN_FILENO]);
                         close(pipe1[STDIN_FILENO]);
@@ -107,7 +99,6 @@ int main(){
                     }
                 }
                 execvp(cmds[i].name, cmds[i].argv);
-                //break;
                 
             }
             else{
@@ -121,12 +112,17 @@ int main(){
                 if(oRedirectFlag > 0){
                     free(oFileName);
                 }  
-                //break;
             }     
-            
-            
         }  
-    
+        for(int u = 0; u < k + 1; u++){
+            for (int v = 1; v < cmds[u].argc - 1; v++){
+                free(cmds[u].argv[v]);
+            }
+            free(cmds[u].argv);
+        }
+        free(cmds);
+        free(str);
     }
+    
     return 0;
 }
