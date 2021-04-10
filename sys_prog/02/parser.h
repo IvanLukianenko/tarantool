@@ -3,7 +3,7 @@
 #include "ctype.h"
 
 struct cmd{
-    const char *name;
+    char *name;
     char **argv;
     int argc;
 };
@@ -43,7 +43,7 @@ struct cmd parser(char *command){
     const char sep[] = " ";
     char *istr;
     int i = 0;
-    int k, j, j2;
+    int k, j;
     istr = strtok(command, sep);
     cmd.name = istr; 
     cmd.argv = (char **)malloc(sizeof(char*)*(strlen(command)+2));   
