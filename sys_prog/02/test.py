@@ -1,1 +1,0 @@
-print("test.py is executed successfully\n")
